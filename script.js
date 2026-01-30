@@ -1,105 +1,104 @@
-let input1;
-let operator;
-let input2;
+let input1 = null;
+let operator = null;
+let currentNumber = "0";
+let waitingForSecondNumber = false;
 
-function add(a, b) {
-    return a + b;
-}
+// Standard Math Functions
+const add = (a, b) => a + b;
+const subtract = (a, b) => a - b;
+const multiply = (a, b) => a * b;
+const divide = (a, b) => (b === 0 ? "NO." : a / b);
 
-function subtract(a, b) {
-    return a - b;
-}
-
-function multiply(a, b) {
-    return a * b;
-}
-
-function divide(a, b) {
-    return a / b;
+function roundResult(number) {
+    if (number === "NO.") return number;
+    // Rounds to 3 decimal places: (x * 1000) / 1000
+    return Math.round(number * 1000) / 1000;
 }
 
 function operate(num1, op, num2) {
     const a = parseFloat(num1);
     const b = parseFloat(num2);
-
     switch (op) {
-        case "+": 
-            return add(a, b);
-        case "-":
-            return subtract(a, b);
-        case "x": 
-            return multiply(a, b);
-        case "/":
-            return divide(a, b);
-        default:
-            return null;
+        case "+": return add(a, b);
+        case "-": return subtract(a, b);
+        case "x": return multiply(a, b);
+        case "/": return divide(a, b);
+        default: return b;
     }
 }
 
 const display = document.querySelector(".display");
 
-const numButtons = document.querySelectorAll(`.numBtns button`);
-
-let currentNumber = ``;
-
+// --- DIGIT LOGIC ---
 function updateDisplay(digit) {
-    if (currentNumber === "0") {
+    if (waitingForSecondNumber) {
         currentNumber = digit;
+        waitingForSecondNumber = false; // Reset so the next digit appends
     } else {
-        currentNumber += digit;
+        currentNumber = currentNumber === "0" ? digit : currentNumber + digit;
     }
-
     display.textContent = currentNumber;
 }
 
-numButtons.forEach(button => {
+document.querySelectorAll(`.numBtns button`).forEach(button => {
     button.addEventListener('click', () => {
-        if (button.textContent === 'AC') {
-            clearDisplay();
-        } else if (button.textContent === '.') {
-            handleDecimal();
-        } else {
-            updateDisplay(button.textContent);
-        }
+        const content = button.textContent;
+        if (content === 'AC') clearDisplay();
+        else if (content === '.') handleDecimal();
+        else updateDisplay(content);
     });
 });
 
-function clearDisplay() {
-    currentNumber = "";
-    input1 = undefined;
-    input2 = undefined;
-    operator = undefined;
-    display.textContent = "0";
-}
+// --- OPERATOR LOGIC ---
+document.querySelectorAll(".opBtns button").forEach(button => {
+    button.addEventListener("click", () => {
+        const nextOperator = button.textContent;
+
+        if (operator && waitingForSecondNumber) {
+            operator = nextOperator; // User changed their mind on the operator
+            return;
+        }
+
+        if (input1 === null) {
+            input1 = parseFloat(currentNumber);
+        } else if (operator) {
+            const result = operate(input1, operator, currentNumber);
+            display.textContent = roundResult(result);
+            input1 = result;
+        }
+
+        waitingForSecondNumber = true; // Now we are waiting for the user to type input2
+        operator = nextOperator;
+    });
+});
+
+// --- EQUALS LOGIC ---
+document.querySelector(".equalBtn button").addEventListener("click", () => {
+    if (operator === null || waitingForSecondNumber) return;
+
+    const result = operate(input1, operator, currentNumber);
+    display.textContent = roundResult(result);
+    
+    // Prepare for a fresh start or continued operation
+    input1 = result; 
+    operator = null;
+    waitingForSecondNumber = true; 
+});
 
 function handleDecimal() {
-    if (!currentNumber.includes(".")) {
+    if (waitingForSecondNumber) {
+        currentNumber = "0.";
+        waitingForSecondNumber = false;
+    } else if (!currentNumber.includes(".")) {
         currentNumber += ".";
-        display.textContent = currentNumber;
     }
+    display.textContent = currentNumber;
 }
 
-const opButtons = document.querySelectorAll(".opBtns button");
-
-opButtons.forEach(button => {
-    button.addEventListener("click", () => {
-        input1 = currentNumber;
-        operator = button.textContent;
-        currentNumber = "";
-    })
-})
-
-const equalBtn = document.querySelector(".equalBtn button");
-
-equalBtn.addEventListener("click", () => {
-    if (input1 === undefined || operator === undefined) return;
-
-    input2 = currentNumber;
-
-    const result = operate(input1, operator, input2);
-
-    display.textContent = result;
-    currentNumber = result.toString();
-    input1 = undefined;
-    operator = undefined;
-});
+function clearDisplay() {
+    input1 = null;
+    operator = null;
+    currentNumber = "0";
+    waitingForSecondNumber = false;
+    display.textContent = "0";
+}

@@ -151,6 +151,11 @@ body {
     gap: 5px;
 }
 
+.opBtns button {
+    background-color: #555;
+    color: rgb(233, 233, 233);
+}
+
 .btmBtns {
     display: flex;
     gap: 10px;
